@@ -102,6 +102,9 @@
       shell:
         cmd: "filebeat modules enable auditd"
 
+    - name: start filebeat
+      command: "filebeat setup -e"
+
     - name: restart filebeat
       systemd:
         name: filebeat
