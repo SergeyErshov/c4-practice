@@ -1,0 +1,58 @@
+- name: install && config fluent
+  hosts: fluentsrv
+  gather_facts: false
+  become: true
+  become_user: "root"
+  become_method: "sudo"
+
+  tasks:
+
+    - name: install nedeed pachage
+      package:
+        name: "{{ item }}"
+        state: present
+        update_cache: true
+      with_items:
+        - curl
+        - wget
+        - openssl
+
+    - name: prepare distrib directory
+      file:
+        path: /usr/share/distrib
+        state: directory
+        mode: "0754"
+      
+    - name: download && run td-agent installation script
+      shell:
+        cmd: "curl -fsSL https://toolbelt.treasuredata.com/sh/install-ubuntu-jammy-td-agent4.sh | sh"
+        chdir: "/usr/share/distrib/"
+
+    - name: start td-agent demon
+      systemd:
+        name: td-agent
+        state: started
+
+    - name: copy new config to server
+      copy:
+        src: "./config/td-agent.conf"
+        dest: "/etc/td-agent/td-agent.conf"
+        owner: root
+        group: root
+        mode: "0644"
+        backup: true
+    
+    - name: prepare fluent access log directory
+      file:
+        path: "/var/log/fluent/"
+        state: directory
+        owner: td-agent
+        group: td-agent
+        mode: "0664"
+    
+    - name: restart td-agent demon
+      systemd:
+        name: td-agent
+        state: reloaded
+
+
