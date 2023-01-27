@@ -1,0 +1,22 @@
+- name: fluetn new config
+  hosts: fluentsrv
+  gather_facts: false
+  become: true
+  become_user: "root"
+  become_method: "sudo"
+
+  tasks:
+
+    - name: copy new config to server
+      copy:
+        src: "./config/td-agent.conf"
+        dest: "/etc/td-agent/td-agent.conf"
+        owner: root
+        group: root
+        mode: "0644"
+        backup: true
+
+    - name: reload demon for applying new conf
+      systemd:
+        name: td-agent
+        state: reloaded
