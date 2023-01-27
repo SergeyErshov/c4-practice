@@ -28,11 +28,6 @@
         cmd: "curl -fsSL https://toolbelt.treasuredata.com/sh/install-ubuntu-jammy-td-agent4.sh | sh"
         chdir: "/usr/share/distrib/"
 
-    - name: start td-agent demon
-      systemd:
-        name: td-agent
-        state: started
-
     - name: copy new config to server
       copy:
         src: "./config/td-agent.conf"
@@ -48,11 +43,11 @@
         state: directory
         owner: td-agent
         group: td-agent
-        mode: "0664"
+        mode: "0775"
     
     - name: restart td-agent demon
       systemd:
         name: td-agent
-        state: reloaded
+        state: restarted
 
 
