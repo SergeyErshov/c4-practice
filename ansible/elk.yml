@@ -1,0 +1,116 @@
+- name: Elastic search install && config
+  hosts: elksrv
+  vars:
+    - kibana_conf: /etc/kibana/kibana.yml
+    - filebeat_conf: /etc/filebeat/filebeat.yml
+  gather_facts: false
+  become: true
+  become_user: "root"
+  become_method: "sudo"
+
+  tasks:
+
+    - name: install nedeed pachage
+      package:
+        name:
+          - curl
+          - wget
+          - openssl
+          - xz-utils
+          - ca-certificates
+          - apt-transport-https
+          - auditd
+        state: present
+        update_cache: true
+
+    - name: prepare distrib directory
+      file:
+        path: /usr/share/distrib
+        state: directory
+        mode: "0754"
+
+    - name: copy deb packages from local to remote
+      copy:
+        src: "./distrib/{{ item }}"
+        dest: "/usr/share/distrib/"
+      loop:
+       - "elasticsearch-8.6.1-amd64.deb"
+       - "kibana-8.6.1-amd64.deb"
+       - "filebeat-8.6.1-amd64.deb"
+
+    - name: install elasticsearch
+      apt:
+        deb: "/usr/share/distrib/elasticsearch-8.6.1-amd64.deb"
+        state: present
+        update_cache: true
+
+    - name: start elasticsearch
+      systemd:
+        name: elasticsearch
+        state: started
+        enabled: true
+
+    - name: install kibana
+      apt:
+        deb: "/usr/share/distrib/kibana-8.6.1-amd64.deb"
+        state: present
+        update_cache: true
+
+    - name: kibana config 1
+      lineinfile:
+        path: "{{ kibana_conf }}"
+        search_string: 'server.host: "localhost"'
+        line: 'server.host: "0.0.0.0"'
+      
+    - name: kibana config 2
+      lineinfile:
+        path: "{{ kibana_conf }}"
+        search_string: '#elasticsearch.hosts: ["http://localhost:9200"]'
+        line: 'elasticsearch.hosts: ["http://localhost:9200"]'
+
+    - name: restart kibana
+      systemd:
+        name: kibana
+        state: restarted
+        enabled: true
+
+    - name: start auditd
+      systemd:
+        name: auditd
+        state: started
+        enabled: true
+
+    - name: install filebeat
+      apt:
+        deb: "/usr/share/distrib/filebeat-8.6.1-amd64.deb"
+        state: present
+        update_cache: true
+
+    - name: filebeat config 1
+      lineinfile:
+        path: "{{ filebeat_conf }}"
+        search_string: '#setup.kibana:'
+        line: 'setup.kibana:'
+      
+    - name: filebeat config 2
+      lineinfile:
+        path: "{{ filebeat_conf }}"
+        search_string: '#host: "localhost:5601"'
+        line: 'host: "localhost:5601"'
+
+    - name: enable auditd filebeat module
+      shell:
+        cmd: "filebeat modules enable auditd"
+
+    - name: restart filebeat
+      systemd:
+        name: filebeat
+        state: restarted
+        enabled: true
+
+      
+
+    
+
+
+    
