@@ -1,0 +1,16 @@
+- name: Get Elasticsearch default conf
+  hosts: elksrv
+  vars:
+    - elastic_conf: /etc/elasticsearch/elasticsearch.yml
+  gather_facts: false
+  become: true
+  become_user: "root"
+  become_method: "sudo"
+
+  tasks:
+
+    - name: fetch default elasticsearch config
+      fetch:
+        src: "{{ elastic_conf }}"
+        dest: "./config/"
+        flat: true
