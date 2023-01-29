@@ -1,0 +1,51 @@
+- name: install nginx, rsyslog and config with kibana
+  hosts: nginx
+  gather_facts: false
+  become: true
+  become_user: "root"
+  become_method: "sudo"
+
+  tasks:
+
+    - name: add rsyslog repo
+      apt_repository:
+        repo: "ppa:adiscon/v8-stable"
+        state: present
+
+    - name: install nedeed pachage
+      package:
+        name:
+          - nginx
+          - rsyslog
+          - rsyslog-mmnormalize
+          - rsyslog-elasticsearch
+        state: present
+        update_cache: true
+
+    - name: config nginx to push log into rsyslog
+      lineinfile:
+        path: "/etc/nginx/nginx.conf"
+        search_string: 'access_log /var/log/nginx/access.log;'
+        line: 'access_log syslog:server=127.0.0.1:514,facility=local7,tag=nginx,severity=info;'
+
+    - name: restart nginx 
+      systemd:
+        name: nginx
+        state: restarted
+        enabled: true
+
+    - name: push rsyslog config file to server
+      copy:
+        src: "./config/nginx_rsyslog.conf"
+        dest: "/etc/rsyslog.d/nginx_rsyslog.conf"
+      tags: rsyslog
+
+    - name: restaring rsyslog
+      systemd:
+        name: rsyslog
+        state: restarted
+        enabled: true
+      tags: rsyslog
+
+
+    
