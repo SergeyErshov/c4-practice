@@ -3,6 +3,7 @@
   vars:
     - kibana_conf: /etc/kibana/kibana.yml
     - filebeat_conf: /etc/filebeat/filebeat.yml
+    - elastic_conf: /etc/elasticsearch/elasticsearch.yml
   gather_facts: false
   become: true
   become_user: "root"
@@ -37,6 +38,7 @@
        - "elasticsearch-8.6.1-amd64.deb"
        - "kibana-8.6.1-amd64.deb"
        - "filebeat-8.6.1-amd64.deb"
+       - "logstash-8.6.1-amd64.deb"
 
     - name: install elasticsearch
       apt:
@@ -44,10 +46,18 @@
         state: present
         update_cache: true
 
-    - name: start elasticsearch
+    - name: copy elasticsearch new conf
+      copy:
+        src: "./config/elasticsearch.yml"
+        dest: "/etc/elasticsearch/elasticsearch.yml"
+        owner: root
+        group: elasticsearch
+        mode: "0660"
+
+    - name: restart elasticsearch
       systemd:
         name: elasticsearch
-        state: started
+        state: restarted
         enabled: true
 
     - name: install kibana
@@ -56,17 +66,14 @@
         state: present
         update_cache: true
 
-    - name: kibana config 1
+    - name: kibana configuring
       lineinfile:
         path: "{{ kibana_conf }}"
-        search_string: 'server.host: "localhost"'
-        line: 'server.host: "0.0.0.0"'
-      
-    - name: kibana config 2
-      lineinfile:
-        path: "{{ kibana_conf }}"
-        search_string: '#elasticsearch.hosts: ["http://localhost:9200"]'
-        line: 'elasticsearch.hosts: ["http://localhost:9200"]'
+        search_string: "{{ item.str }}"
+        line: "{{ item.line }}"
+      loop:
+        - {str: 'server.host: "localhost"', line: 'server.host: "0.0.0.0"'}
+        - {str: '#elasticsearch.hosts: ["http://localhost:9200"]', line: 'elasticsearch.hosts: ["http://localhost:9200"]'}
 
     - name: restart kibana
       systemd:
@@ -86,13 +93,7 @@
         state: present
         update_cache: true
 
-    - name: filebeat config 1
-      lineinfile:
-        path: "{{ filebeat_conf }}"
-        search_string: '#setup.kibana:'
-        line: 'setup.kibana:'
-      
-    - name: filebeat config 2
+    - name: filebeat configuring
       lineinfile:
         path: "{{ filebeat_conf }}"
         search_string: '#host: "localhost:5601"'
@@ -100,14 +101,68 @@
 
     - name: enable auditd filebeat module
       shell:
-        cmd: "filebeat modules enable auditd"
+        cmd: "filebeat modules enable auditd && filebeat modules enable system"
+
+    - name: config auditd filebeat module
+      lineinfile:
+        path: "/etc/filebeat/modules.d/auditd.yml"
+        search_string: '    enabled: false'
+        line: '    enabled: true'
+
+    - name: copy system.yml to /etc/filebeat/modules.d (disabled by default, filebeat don't start with auditd)
+      copy:
+        src: "./config/system.yml"
+        dest: "/etc/filebeat/modules.d/system.yml"
+        owner: root
+        group: root
+        mode: "0644"
+        backup: true
+
+    - name: admin must check for kibana status
+      pause:
+        prompt: "ensure that kibana is running than press Enter"
+        echo: false
 
     - name: start filebeat
-      command: "filebeat setup -e"
+      shell:
+        cmd: "filebeat setup -e"
 
     - name: restart filebeat
       systemd:
         name: filebeat
+        state: restarted
+        enabled: true
+
+    - name: install logstash
+      apt:
+        deb: "/usr/share/distrib/logstash-8.6.1-amd64.deb"
+        state: present
+        update_cache: true
+
+    - name: filebeat configuring
+      lineinfile:
+        path: "{{ filebeat_conf }}"
+        search_string: "{{ item.str }}"
+        line: "{{ item.line }}"
+      loop:
+        - {str: 'output.elasticsearch:', line: '#output.elasticsearch:'}
+        - {str: 'hosts: ["localhost:9200"]', line: '#hosts: ["localhost:9200"]'}
+        - {str: '#output.logstash:', line: 'output.logstash:'}
+        - {str: '#hosts: ["localhost:5044"]', line: 'hosts: ["localhost:5044"]'}
+
+    - name: copy logstash test1 config to server
+      copy:
+        src: "./config/test1.conf"
+        dest: "/etc/logstash/conf.d/"
+
+    - name: restart filebeat
+      systemd:
+        name: filebeat
+        state: restarted
+
+    - name: restart logstash
+      systemd:
+        name: logstash
         state: restarted
         enabled: true
 
