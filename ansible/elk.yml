@@ -154,6 +154,7 @@
       copy:
         src: "./config/test1.conf"
         dest: "/etc/logstash/conf.d/"
+      tags: reply
 
     - name: restart filebeat
       systemd:
@@ -165,6 +166,7 @@
         name: logstash
         state: restarted
         enabled: true
+      tags: reply
 
       
 
