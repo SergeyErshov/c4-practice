@@ -27,3 +27,17 @@ module "yandex_instance_2" {
   zone_name             = "ru-central1-a"
 }
 
+module "yandex_instance_3" {
+  source                = "./modules/create_vm"
+  disk_name             = "sys-nginx"
+  disk_size             = "20"
+  disk_type             = "network-hdd"
+  cores                 = "2"
+  memory                = "2"
+  instance_family_image = "ubuntu-2204-lts"
+  instance_subnet_name  = "a-ru-central1-a"
+  instance_name         = "nginx"
+  instance_desc         = "nginx server with syslog"
+  zone_name             = "ru-central1-a"
+}
+
