@@ -96,8 +96,8 @@
     - name: filebeat configuring
       lineinfile:
         path: "{{ filebeat_conf }}"
-        search_string: '#host: "localhost:5601"'
-        line: 'host: "localhost:5601"'
+        search_string: '  #host: "localhost:5601"'
+        line: '  host: "localhost:5601"'
 
     - name: enable auditd filebeat module
       shell:
@@ -146,9 +146,9 @@
         line: "{{ item.line }}"
       loop:
         - {str: 'output.elasticsearch:', line: '#output.elasticsearch:'}
-        - {str: 'hosts: ["localhost:9200"]', line: '#hosts: ["localhost:9200"]'}
+        - {str: '  hosts: ["localhost:9200"]', line: '  #hosts: ["localhost:9200"]'}
         - {str: '#output.logstash:', line: 'output.logstash:'}
-        - {str: '#hosts: ["localhost:5044"]', line: 'hosts: ["localhost:5044"]'}
+        - {str: '  #hosts: ["localhost:5044"]', line: '  hosts: ["localhost:5044"]'}
 
     - name: copy logstash test1 config to server
       copy:
