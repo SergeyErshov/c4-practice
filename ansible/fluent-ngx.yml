@@ -1,0 +1,79 @@
+- name: install && config fluent to push logs to elasticsearch
+  hosts: nginx
+  gather_facts: false
+  become: true
+  become_user: "root"
+  become_method: "sudo"
+
+  tasks:
+
+    - name: install nedeed pachage
+      package:
+        name:
+          - curl
+          - wget
+          - openssl
+          - ruby-full
+        state: present
+        update_cache: true
+
+    - name: prepare distrib directory
+      file:
+        path: /usr/share/distrib
+        state: directory
+        mode: "0754"
+
+    - name: download && run td-agent installation script
+      shell:
+        cmd: "curl -fsSL https://toolbelt.treasuredata.com/sh/install-ubuntu-jammy-td-agent4.sh | sh"
+        chdir: "/usr/share/distrib/"
+
+    - name: install fluentd plugins
+      shell:
+        cmd: "td-agent-gem install fluent-plugin-elasticsearch fluent-plugin-record-modifier"
+
+    - name: fetch default nginx config
+      fetch:
+        src: "/etc/nginx/nginx.conf"
+        dest: "./config/for_ngx/"
+        flat: true
+    
+    - name: fetch td-agent default config
+      fetch:
+        src: "/etc/td-agent/td-agent.conf"
+        dest: "./config/for_ngx/"
+        flat: true
+
+    - name: pause for admin to change fluent config
+      pause:
+        prompt: "set needed changes into td-agent.conf, nginx.conf than press Enter when it will be done"
+        echo: true
+
+    - name: copy new td-agent config to server
+      copy:
+        src: "./config/for_ngx/td-agent.conf"
+        dest: "/etc/td-agent/td-agent.conf"
+        owner: root
+        group: root
+        mode: "0644"
+        backup: true
+
+    - name: copy new nginx config to server
+      copy:
+        src: "./config/for_ngx/nginx.conf"
+        dest: "/etc/nginx/nginx.conf"
+        owner: root
+        group: root
+        mode: "0644"
+        backup: true
+
+    - name: restart nginx 
+      systemd:
+        name: nginx
+        state: restarted
+
+    - name: restart td-agent demon
+      systemd:
+        name: td-agent
+        state: restarted
+        enabled: true
