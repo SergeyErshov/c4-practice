@@ -10,7 +10,7 @@
 Конфиг logstash - [здесь](https://github.com/SergeyErshov/c4-practice/blob/main/ansible/config/test1.conf)
 Используемый ansible-playbook - [этот](https://github.com/SergeyErshov/c4-practice/blob/main/ansible/elk.yml)
 
-Скрин из kibana: ![Filebeat-logstash-elasticsearch-kibana](https://drive.google.com/file/d/1MH92pPSCWUeV82AOB2QUtoSQedOegnq3/view?usp=sharing "Скриншот из kibana - filebeat")
+Скрин из kibana: ![Filebeat-logstash-elasticsearch-kibana](https://github.com/SergeyErshov/c4-practice/blob/main/raw/Kibana_using_logstash.png "Скриншот из kibana - filebeat")
 
 ### 🖊️ Задание С 4.6.2  
 
@@ -47,7 +47,7 @@ Jan 29 13:11:33 fhmsd1dfm1cv7vqfj545 rsyslogd:  message repeated 91 times: [omel
 
 для выполнения задачи использвался [playbook](https://github.com/SergeyErshov/c4-practice/blob/main/ansible/fluent-ngx.yml)  
 
-Скрин из kibana: ![nginx-fluent-elasticsearch-kibana](https://drive.google.com/file/d/1H-RcstI-XYrpJgF7WQW5pXE2EOt7cuz1/view?usp=sharing "Скриншот из kibana - nginx_access")
+Скрин из kibana: ![nginx-fluent-elasticsearch-kibana](https://github.com/SergeyErshov/c4-practice/blob/main/raw/Nginx_using_fluent.png "Скриншот из kibana - nginx_access")
 
 ---
 
